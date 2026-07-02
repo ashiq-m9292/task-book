@@ -73,7 +73,7 @@ export const loginUser = async (req, res) => {
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
             maxAge: 10 * 365 * 24 * 60 * 60 * 1000 // 10 years
-        }).json({ success: true, message: 'User login in successfully', name: user.name, email: user.email, token: token });
+        }).json({ success: true, message: 'User login in successfully', name: user.name, email: user.email, token: token, userToken: user.token });
 
     } catch (error) {
         return res.status(500).json({ success: false, message: 'error in login user', error: error.message });
