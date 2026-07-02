@@ -46,9 +46,9 @@ export const createUser = async (req, res) => {
 // login user 
 export const loginUser = async (req, res) => {
     try {
-        const { email, password } = req.body;
-        if (!email || !password) {
-            return res.status(200).json({ success: true, message: 'Please provide email and password' });
+        const { email, password, token } = req.body;
+        if (!email || !password || !token) {
+            return res.status(200).json({ success: true, message: 'Please provide email and password ' });
         }
 
         // Check if user exists
@@ -64,15 +64,16 @@ export const loginUser = async (req, res) => {
         }
 
         // ṭoken generation
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
-
+        const tokenCookies = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+        user.token = tokenCookies;
+        await user.save();
         // send response save cookie
-        return res.cookie('token', token, {
+        return res.cookie('token', tokenCookies, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
             maxAge: 10 * 365 * 24 * 60 * 60 * 1000 // 10 years
-        }).json({ success: true, message: 'User login in successfully', name: user.name, email: user.email, token: token });
+        }).json({ success: true, message: 'User login in successfully', name: user.name, email: user.email, token: tokenCookies });
 
     } catch (error) {
         return res.status(500).json({ success: false, message: 'error in login user', error: error.message });
@@ -80,9 +81,11 @@ export const loginUser = async (req, res) => {
 };
 
 // logout user
-export const logoutUser = (req, res) => {
+export const logoutUser = async (req, res) => {
     try {
-        res.clearCookie('token');
+        req.user.token = null;
+        await req.user.save();
+        res.clearCookie('token')
         return res.status(200).json({ success: true, message: 'User logout successfully' });
     } catch (error) {
         return res.status(500).json({ success: false, message: 'error in logout user', error: error.message });

@@ -4,11 +4,17 @@ import User from "../models/usermodel.js";
 export const isAuth = async (req, res, next) => {
     const { token } = req.cookies;
     if (!token) {
-        return res.status(401).json({ message: "Token N/A" });
+        return res.status(404).json({ message: "Token N/A" });
     };
     try {
         const decodeData = jwt.verify(token, process.env.JWT_SECRET);
         req.user = await User.findById(decodeData.id);
+        if (!req.user) {
+            return res.status(404).json({ message: "User N/A" });
+        }
+        if (req.user.token !== token) {
+            return res.status(401).json({ message: "Login from another device" });
+        }
         next();
     } catch (error) {
         console.log("error in isAuth middleware", error);
